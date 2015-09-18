@@ -1,0 +1,47 @@
+
+//__________________________________ROTATION_ABOUT_THE_Z-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Z-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Z-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Z-AXIS_______________________________
+    
+   
+    float angle_rad        =  counter1 * 3.14159 / 180.0;
+    
+    position.x             =  gl_Vertex.x * cos(angle_rad) + gl_Vertex.y * sin(angle_rad);
+    position.y             = -gl_Vertex.x * sin(angle_rad) + gl_Vertex.y * cos(angle_rad);   
+    position.z             =  gl_Vertex.z;
+    position.w             =  gl_Vertex.w;   
+    
+
+//__________________________________ROTATION_ABOUT_THE_Y-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Y-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Y-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_Y-AXIS_______________________________
+
+    
+    float angle_rad        =  counter1 * 3.14159 / 180.0;
+
+    position.x             =  gl_Vertex.x * cos(angle_rad) + gl_Vertex.z * sin(angle_rad);
+    position.y             =  gl_Vertex.y;    
+    position.z             = -gl_Vertex.x * sin(angle_rad) + gl_Vertex.z * cos(angle_rad);    
+    position.w             =  gl_Vertex.w;   
+    
+    
+//__________________________________ROTATION_ABOUT_THE_X-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_X-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_X-AXIS_______________________________
+//__________________________________ROTATION_ABOUT_THE_X-AXIS_______________________________
+
+
+    float angle_rad        =  counter1 * 3.14159 / 180.0;
+
+    position.x             =  gl_Vertex.x;    
+    position.y             =  gl_Vertex.y * cos(angle_rad) + gl_Vertex.z * sin(angle_rad);
+    position.z             = -gl_Vertex.y * sin(angle_rad) + gl_Vertex.z * cos(angle_rad);    
+    position.w             =  gl_Vertex.w;   
+    
+
+//-------------------------------------------------------------------------------------------------------
+
+/* File: Twist.cpp; Mode: C++; Tab-width: 3; Author: Simon Flannery; */
+//__blended_with_

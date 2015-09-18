@@ -1,0 +1,97 @@
+Shader "Custom/TextureCoordinates/Base" 
+{
+	
+	Properties 
+	{
+		_MainTex ("Base (RGB)", 2D) = "white" {}
+		_lightVector ("Light Vector", Vector) = (0.0, 0.0, 1.0, 0.0) 
+    }
+		
+	SubShader 
+	{
+		Pass 
+		{
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+
+//=================================================================================	
+//======================_COMMON_FUNCTIONS_=========================================		
+		
+			struct vertexInput 
+			{
+				float4 vertex    : POSITION;
+				float3 normal    : NORMAL;				
+				float4 texcoord0 : TEXCOORD0;
+			};
+
+			struct fragmentInput
+			{
+				float4 position  : SV_POSITION;
+				float4 texcoord0 : TEXCOORD0;
+				float3 normal    : TEXCOORD1;	
+				float4 lightTransformed : TEXCOORD2;			
+				
+			};
+			
+//=================================================================================			
+//======================_VERTEX_SHADER_============================================				
+	        float4 _lightVector;
+	
+			fragmentInput vert(vertexInput i)
+			{
+			
+				fragmentInput o;
+				o.position = mul (UNITY_MATRIX_MVP, i.vertex);
+				o.normal = i.normal;
+				o.texcoord0 = i.texcoord0;
+				o.lightTransformed = mul(UNITY_MATRIX_T_MV, _lightVector);
+				return o;
+			
+			}
+
+//=================================================================================		
+//======================_FRAGMENT_SHADER_==========================================			
+
+			uniform sampler2D _MainTex;
+			float3 normal_FRAG;
+			float  NdotL1;
+			
+			float4 frag(fragmentInput i) : COLOR 
+			{
+			     
+				normal_FRAG = normalize(i.normal);
+			     
+				NdotL1 =  max(0.0, dot(normal_FRAG, i.lightTransformed.xyz));
+
+	            //----------------
+	 			float E = .1;
+	    		//----------------
+	    		float df = NdotL1;
+
+		        df = smoothstep(0.35 - E, 0.35 + E, df);
+	    		
+			    //---------------------------------------
+	    		float sf = NdotL1;
+				sf = pow(sf, 40);
+    			//----------------
+    			E = .05;
+	    	    
+	    	    sf = smoothstep(0.5 - E, 0.5 + E, sf);
+	            //------------------------------------------------
+				
+				return tex2D(_MainTex, i.texcoord0.xy) * df + tex2D(_MainTex, i.texcoord0.xy) * sf;
+				 
+				
+			}
+			
+//=================================================================================				
+//=================================================================================				
+			
+			
+			
+			ENDCG
+		}
+	}
+}
+

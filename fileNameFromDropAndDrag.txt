@@ -1,0 +1,74 @@
+
+#include <cmath>
+#include <cstring>
+#include <limits>
+#include <string>
+#include <iostream>
+#include <fstream>
+
+
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))//to_use-> COUNT_OF( floorTile_2m_INDICES)
+
+
+using namespace std;
+/*
+int main(int argc, char *argv[])
+{
+    
+    ifstream in("GLOBALS.cpp");
+    string s, line;
+    while(getline(in, line))
+    {
+          s += line + "\n";
+    }
+    //=================================================
+    ofstream outGlobals("GLOBALS.cpp");
+    outGlobals << s << "\n";
+    //=================================================
+    
+
+
+}*/
+
+int main(int argc, char* argv[])
+{
+
+    //cout << argv[1] << endl;
+//==============================================================================
+    std::string m_directoryPath;
+
+
+    std::string filename = argv[1];
+    std::string::size_type offset = filename.find_last_of('\\');
+
+
+
+    if (offset != std::string::npos)
+    {
+        m_directoryPath = filename.substr(0, ++offset);
+    }
+    else
+    {
+        offset = filename.find_last_of('/');
+
+        if (offset != std::string::npos)
+            m_directoryPath = filename.substr(0, ++offset);
+    }
+
+//---------------------------------------------------------------------
+
+int sizeOfDirectory = m_directoryPath.size();   
+int sizeOfTotalPath = filename.size();  
+
+int sizeOfFilename = sizeOfTotalPath - sizeOfDirectory;
+
+std:: string passFilename(filename, sizeOfDirectory, sizeOfFilename-4);
+
+//==============================================================================
+    ofstream outGlobals("test.cpp");
+    
+             cout << passFilename << "\n";
+
+
+    system("pause");
+}

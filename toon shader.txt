@@ -1,0 +1,161 @@
+Shader "Custom/TextureCoordinates/Base" 
+{
+	
+	Properties 
+	{
+		_MainTex ("Base (RGB)", 2D) = "white" {}
+		_lightVector ("Light Vector", Vector) = (0.0, 0.0, 1.0, 0.0) 
+    }
+		
+	SubShader 
+	{
+		Pass 
+		{
+			CGPROGRAM
+			#pragma vertex vert
+			#pragma fragment frag
+
+//=================================================================================	
+//======================_COMMON_FUNCTIONS_=========================================		
+		
+			struct vertexInput 
+			{
+				float4 vertex    : POSITION;
+				float3 normal    : NORMAL;				
+				float4 texcoord0 : TEXCOORD0;
+			};
+
+			struct fragmentInput
+			{
+				float4 position  : SV_POSITION;
+				float4 texcoord0 : TEXCOORD0;
+				float3 normal    : TEXCOORD1;	
+				float4 lightTransformed : TEXCOORD2;			
+				
+			};
+			
+//=================================================================================			
+//======================_VERTEX_SHADER_============================================				
+	        float4 _lightVector;
+	
+			fragmentInput vert(vertexInput i)
+			{
+			
+				fragmentInput o;
+				o.position = mul (UNITY_MATRIX_MVP, i.vertex);
+				o.normal = i.normal;
+				o.texcoord0 = i.texcoord0;
+				o.lightTransformed = mul(UNITY_MATRIX_T_MV, _lightVector);
+				return o;
+			
+			}
+
+//=================================================================================		
+//======================_FRAGMENT_SHADER_==========================================			
+
+			uniform sampler2D _MainTex;
+			float3 normal_FRAG;
+			//float3 lightPosition = float3(0.0, 0.0, 1.0);
+			float  NdotL1;
+			
+			float4 frag(fragmentInput i) : COLOR 
+			{
+			     
+				normal_FRAG = normalize(i.normal);
+			     
+				NdotL1 =  max(0.0, dot(normal_FRAG, i.lightTransformed.xyz));
+			
+ 				float A = 0.1;
+	    		float B = 0.3;
+	   	 		float C = 0.5;
+	    		float D = 1.0;
+	 
+	 			float E = .1;
+	    		//-------------------------------
+	    		float df = NdotL1;
+	    		if (df < A) df = 0.0;
+	    		else if (df < B) df = B;
+	    		
+	    		//else if (df < C) df = C;
+	    	    
+	    	    else if (df > 0.35 - E && df < 0.35 + E)
+	    		{
+	        			df = smoothstep(0.35 - E, 0.35 + E, df);
+	    		}
+	    		
+	    		
+	    		else df = D;
+	    		
+	    		
+	    		//------------------------------------------------
+	    		float sf = NdotL1;
+				sf = pow(sf, 40);
+    			//-------------------------------
+    			E = .05;
+	    		if (sf > 0.5 - E && sf < 0.5 + E)
+	    		{
+	        			sf = smoothstep(0.5 - E, 0.5 + E, sf);
+	    		}
+	    		else
+	    		{
+	        			sf = step(0.5, sf);
+	    		}
+			    //------------------------------------------------
+				
+				return tex2D(_MainTex, i.texcoord0.xy) * df + tex2D(_MainTex, i.texcoord0.xy) * sf;
+				 
+				//return tex2D(_MainTex, i.texcoord0.xy);
+			
+			}
+			
+//=================================================================================				
+//=================================================================================				
+			
+			
+			
+			ENDCG
+		}
+	}
+}
+
+
+/*
+			float4 frag(fragmentInput i) : COLOR 
+			{
+			     
+				normal_FRAG = normalize(i.normal);
+			     
+				NdotL1 =  max(0.0, dot(normal_FRAG, i.lightTransformed.xyz));
+			
+ 				float A = 0.1;
+	    		float B = 0.3;
+	   	 		float C = 0.5;
+	    		float D = 1.0;
+	 
+	    		float df = NdotL1;
+	    		if (df < A) df = 0.0;
+	    		else if (df < B) df = B;
+	    		else if (df < C) df = C;
+	    		else df = D;
+	    		
+	    		
+	    		//------------------------------------------------
+	    		float sf = NdotL1;
+				sf = pow(sf, 40);
+    			//-------------------------------
+    			float E = .05;
+	    		if (sf > 0.5 - E && sf < 0.5 + E)
+	    		{
+	        			sf = smoothstep(0.5 - E, 0.5 + E, sf);
+	    		}
+	    		else
+	    		{
+	        			sf = step(0.5, sf);
+	    		}
+			    //------------------------------------------------
+				
+				return tex2D(_MainTex, i.texcoord0.xy) * df + tex2D(_MainTex, i.texcoord0.xy) * sf;
+				 
+				//return tex2D(_MainTex, i.texcoord0.xy);
+			}
+*/			

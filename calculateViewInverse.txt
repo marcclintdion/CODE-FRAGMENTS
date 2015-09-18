@@ -1,0 +1,32 @@
+static void calculateViewInverse(float[] viewMatrix,
+        float[] viewPosition, float[] resultMatrix) {
+    // derived from:
+    // http://swiftcoder.wordpress.com/2008/11/25/constructing-a-billboard-matrix/
+    // A rotation matrix is a
+    // "real special orthogonal matrix", which for our purposes means that
+    // its transpose is also its inverse.
+    resultMatrix[0] = viewMatrix[0];
+
+    resultMatrix[1] = viewMatrix[4];
+    resultMatrix[4] = viewMatrix[1];
+
+    resultMatrix[2] = viewMatrix[8];
+    resultMatrix[8] = viewMatrix[2];
+
+    resultMatrix[5] = viewMatrix[5];
+
+    resultMatrix[6] = viewMatrix[9];
+    resultMatrix[9] = viewMatrix[6];
+
+    resultMatrix[10] = viewMatrix[10];
+
+    resultMatrix[3] = viewPosition[0];
+    resultMatrix[7] = viewPosition[1];
+    resultMatrix[11] = viewPosition[2];
+
+    resultMatrix[12] = 0;
+    resultMatrix[13] = 0;
+    resultMatrix[14] = 0;
+
+    resultMatrix[15] = 1;
+}

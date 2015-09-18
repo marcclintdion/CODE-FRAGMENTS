@@ -1,0 +1,16 @@
+#define COUNT_OF(x) ((sizeof(x)/sizeof(0[x])) / ((size_t)(!(sizeof(x) % sizeof(0[x])))))
+
+
+
+void function(void)
+{
+  
+         ofstream outSettings("z_sizeOfArray.cpp");
+   
+         outSettings << "var        number of array elements in floorTile_2m_INDICES        =  "    
+                                  << COUNT_OF( floorTile_2m_INDICES)                             << ";\n\n"; 
+
+         outSettings << "var        number of array elements in floorTile_2m        =  "    
+                                  << COUNT_OF( floorTile_2m)/8                           << ";\n\n"; 
+                              
+}

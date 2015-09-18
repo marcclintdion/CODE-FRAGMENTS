@@ -1,0 +1,264 @@
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+
+#include <OpenGL/OpenGL.h>
+#include <GLUT/GLUT.h>
+
+typedef struct { float x, y, z; } vector;
+typedef struct { float w, x, y, z; } quaternion;
+
+vector make_vector(float x, float y, float z) {
+  return (vector){x, y, z};
+}
+
+float vector_x(vector v) { return v.x; }
+float vector_y(vector v) { return v.y; }
+float vector_z(vector v) { return v.z; }
+
+vector vector_add(vector a, vector b) {
+  return (vector){a.x + b.x, a.y + b.y, a.z + b.z};
+}
+
+vector vector_scale(float constant, vector v) {
+  return (vector){constant*v.x, constant*v.y, constant*v.z};
+}
+
+float vector_norm(vector v) {
+  return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+vector vector_normalize(vector v) {
+  return vector_scale(1/vector_norm(v), v);
+}
+
+float vector_dot_product(vector a, vector b) {
+  return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+vector vector_cross_product(vector a, vector b) {
+  return (vector){a.y*b.z - a.z*b.y, a.x*b.z - a.z*b.x, a.x*b.y - a.y*b.x};
+}
+
+quaternion make_quaternion(float w, float x, float y, float z) {
+  return (quaternion){w, x, y, z};
+}
+
+quaternion make_rotation_quaternion_from_axis_and_angle(vector axis, float angle) {
+  return (quaternion){cos(angle/2.0),
+                      vector_x(axis)*sin(angle/2.0),
+                      vector_y(axis)*sin(angle/2.0),
+                      vector_z(axis)*sin(angle/2.0)};
+}
+
+quaternion quaternion_multiply(quaternion a, quaternion b) {
+  return (quaternion){a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+                      a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+                      a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+                      a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w};
+}
+
+quaternion quaternion_conjugate(quaternion q) {
+  return (quaternion){q.w, -q.x, -q.y, -q.z};
+}
+
+vector quaternion_rotate_vector(quaternion q, vector v) {
+  quaternion vq;
+  
+  vq = make_quaternion(0, vector_x(v), vector_y(v), vector_z(v));
+  vq = quaternion_multiply(q, vq);
+  vq = quaternion_multiply(vq, quaternion_conjugate(q));
+  return make_vector(vq.x, vq.y, vq.z);
+}
+
+void quaternion_fill_opengl_rotation_matrix(quaternion q, GLfloat * m) {
+  vector x,   y,   z;
+  vector x_t, y_t, z_t;
+  
+  x = make_vector(1, 0, 0);
+  y = make_vector(0, 1, 0);
+  z = make_vector(0, 0, 1);
+  
+  x_t = quaternion_rotate_vector(q, x);
+  y_t = quaternion_rotate_vector(q, y);
+  z_t = quaternion_rotate_vector(q, z);
+
+  m[ 0] = vector_dot_product(x, x_t);
+  m[ 1] = vector_dot_product(y, x_t);
+  m[ 2] = vector_dot_product(z, x_t);
+  m[ 3] = 0;
+  
+  m[ 4] = vector_dot_product(x, y_t);
+  m[ 5] = vector_dot_product(y, y_t);
+  m[ 6] = vector_dot_product(z, y_t);
+  m[ 7] = 0;
+  
+  m[ 8] = vector_dot_product(x, z_t);
+  m[ 9] = vector_dot_product(y, z_t);
+  m[10] = vector_dot_product(z, z_t);
+  m[11] = 0;
+
+  m[12] = 0;
+  m[13] = 0;
+  m[14] = 0;
+  m[15] = 1;
+}
+
+int mouse_pressed;
+int callback_set;
+float previous_time, current_time;
+float mouse_x, mouse_y;
+
+vector downwards;
+vector ball_position;
+quaternion ball_orientation;
+
+void display() {
+  GLfloat rotation[16];
+  float d;
+  
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  
+  glLoadIdentity();
+  glTranslatef(0, 0, -20);
+  
+  glPushMatrix(); {
+    glScalef(10, 10, 10);
+    glBegin(GL_QUADS); {
+      glColor3f(0.98, 0.2, 0.43);
+      glVertex2f(-1, -1);
+      glVertex2f(+1, -1);
+      glVertex2f(+1, +1);
+      glVertex2f(-1, +1);
+    } glEnd();
+  } glPopMatrix();
+  
+  glPushMatrix(); {
+    quaternion_fill_opengl_rotation_matrix(ball_orientation, rotation);
+    glTranslatef(vector_x(ball_position),
+         vector_y(ball_position),
+         vector_z(ball_position));
+    glMultMatrixf(rotation);
+    glColor3f(0, 0, 1);
+    glutSolidDodecahedron();
+  } glPopMatrix();
+  
+  glPushMatrix(); {
+    glDisable(GL_LIGHTING);
+    glDisable(GL_DEPTH_TEST);
+    glColor3f(1, 1, 0);
+    glTranslatef(vector_x(ball_position),
+         vector_y(ball_position),
+           1+vector_z(ball_position));
+//#define ROT(x, y, theta) x*cos(theta) - y*sin(theta), x*sin(theta) + y*cos(theta)
+#define ROT(x, y, costheta, sintheta) x*costheta - y*sintheta, x*sintheta + y*costheta
+    d = mouse_x * mouse_x + mouse_y * mouse_y;
+    d = 1/sqrt(d);
+    glBegin(GL_LINES); {
+      glVertex2f(ROT(0, 0, mouse_x*d, mouse_y*d));
+      glVertex2f(ROT(2, 0, mouse_x*d, mouse_y*d));
+      glVertex2f(ROT(2, 0, mouse_x*d, mouse_y*d));
+      glVertex2f(ROT(1.5,  0.5, mouse_x*d, mouse_y*d));
+      glVertex2f(ROT(2, 0, mouse_x*d, mouse_y*d));
+      glVertex2f(ROT(1.5, -0.5, mouse_x*d, mouse_y*d));
+    } glEnd();
+#undef ROT
+    glEnable(GL_LIGHTING);
+    glEnable(GL_DEPTH_TEST);
+  } glPopMatrix();
+  
+  glutSwapBuffers();
+}
+
+void button(int button, int state, int x, int y) {
+  if(button == GLUT_LEFT_BUTTON)
+    mouse_pressed = state == GLUT_DOWN;
+}
+
+void motion(int x, int y) {
+  mouse_x = (x/640.0)*2-1;
+  mouse_y = 1-(y/480.0)*2;
+}
+
+void animate(float dt) 
+{
+
+}
+
+void timer(int ignored) {
+  current_time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+  animate(current_time - previous_time);
+  previous_time = current_time;
+  glutTimerFunc(20, timer, -1);
+  glutPostRedisplay();
+}
+
+void visibility(int state) {
+  if(state == GLUT_VISIBLE
+  && !callback_set){
+    callback_set = 1;
+    previous_time = glutGet(GLUT_ELAPSED_TIME)/1000.0;
+    timer(-1);
+  }
+}
+
+int main(int argc, char ** argv) {
+  //--------------------------------------------------------
+  mouse_pressed = 0;
+  mouse_x = 1;
+  mouse_y = 0;
+  callback_set = 0;
+  downwards = make_vector(0, 0, 1);
+  ball_position = make_vector(0, 0, 0);
+  ball_orientation = make_quaternion(0, 1, 0, 0);
+  //---------------------------------------------------------
+  vector ball_movement;
+  vector rotation_axis;
+  quaternion rotation;
+  float speed;
+  
+  if(dt < 0.0001) return;
+  if(mouse_x * mouse_x + mouse_y * mouse_y < 0.0001) return;
+
+  ball_movement = vector_scale(dt * 3, make_vector(mouse_x, mouse_y, 0));
+  ball_position = vector_add(ball_position, ball_movement);
+  
+  speed = vector_norm(ball_movement);
+  ball_movement.x = -ball_movement.x;                                                 
+  rotation_axis = vector_normalize(vector_cross_product(downwards, ball_movement));
+  
+  rotation = make_rotation_quaternion_from_axis_and_angle(rotation_axis, speed * 1.481);
+  ball_orientation = quaternion_multiply(rotation, ball_orientation);  
+  
+  //----------------------------------------------------------------------------------------
+  
+  glutInit(&argc, argv);
+  glutInitWindowSize(640, 480);
+  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+  glutCreateWindow("polygon");
+  
+  ///////////////////////////
+  glViewport(0, 0, 640, 480);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(60, 640.0/480.0, 5, 100);
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+  
+  glEnable(GL_DEPTH_TEST);
+  glEnable(GL_LIGHTING);
+  glEnable(GL_LIGHT0);
+  glEnable(GL_COLOR_MATERIAL);
+  
+  glClearColor(0, 0, 0, 1);
+  ///////////////////////////
+  
+  glutDisplayFunc(display);
+  glutMouseFunc(button);
+  glutMotionFunc(motion);
+  glutVisibilityFunc(visibility);
+  glutMainLoop();
+  
+  return EXIT_SUCCESS;
+}

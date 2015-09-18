@@ -1,0 +1,8 @@
+#ifdef WIN32
+        //====================================================================
+        scaleScreenAlignedQuadRatio  =  (GLfloat)viewWidth / (GLfloat)viewHeight;
+        //-------------------------------------------------------------------
+        inverseScreenRatio           = 1.0 / (GLfloat)viewWidth * viewHeight; 
+        display_00_MOVE[0]           += inverseScreenRatio * display_00_SCALE[0] * 0.5; 
+        display_00_MOVE[1]           -=  display_00_SCALE[1] * 0.5 ;        
+#endif 

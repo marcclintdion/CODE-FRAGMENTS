@@ -1,0 +1,184 @@
+static inline void Matrix3DSetUsingQuaternion3D(Matrix3D matrix, Quaternion3D quat)
+{
+   matrix[0]  = (1.0f - (2.0f * ((quat.y * quat.y) + (quat.z * quat.z))));
+   matrix[1]  = (2.0f * ((quat.x * quat.y) - (quat.z * quat.w)));
+   matrix[2]  = (2.0f * ((quat.x * quat.z) + (quat.y * quat.w)));
+   matrix[3] = 0.0f;
+   matrix[4]  = (2.0f * ((quat.x * quat.y) + (quat.z * quat.w)));
+   matrix[5]  = (1.0f - (2.0f * ((quat.x * quat.x) + (quat.z * quat.z))));
+   matrix[6]  = (2.0f * ((quat.y * quat.z) - (quat.x * quat.w)));
+   matrix[7] = 0.0f;
+   matrix[8]  = (2.0f * ((quat.x * quat.z) - (quat.y * quat.w)));
+   matrix[9]  = (2.0f * ((quat.y * quat.z) + (quat.x * quat.w)));
+   matrix[10] = (1.0f - (2.0f * ((quat.x * quat.x) + (quat.y * quat.y))));
+   matrix[11] = 0.0f;
+   matrix[12]  = 0.0f;
+   matrix[13]  = 0.0f;
+   matrix[14] = 0.0f;
+   matrix[15] = 1.0f;
+}
+
+//=========================================================================
+
+typedef struct { float x, y, z; } vector;
+typedef struct { float w, x, y, z; } quaternion;
+
+vector make_vector(float x, float y, float z) {
+  return (vector){x, y, z};
+}
+
+float vector_x(vector v) { return v.x; }
+float vector_y(vector v) { return v.y; }
+float vector_z(vector v) { return v.z; }
+
+vector vector_add(vector a, vector b) {
+  return (vector){a.x + b.x, a.y + b.y, a.z + b.z};
+}
+
+vector vector_scale(float constant, vector v) {
+  return (vector){constant*v.x, constant*v.y, constant*v.z};
+}
+
+float vector_norm(vector v) {
+  return sqrt(v.x*v.x + v.y*v.y + v.z*v.z);
+}
+
+vector vector_normalize(vector v) {
+  return vector_scale(1/vector_norm(v), v);
+}
+
+float vector_dot_product(vector a, vector b) {
+  return a.x*b.x + a.y*b.y + a.z*b.z;
+}
+
+vector vector_cross_product(vector a, vector b) {
+  return (vector){a.y*b.z - a.z*b.y, a.x*b.z - a.z*b.x, a.x*b.y - a.y*b.x};
+}
+
+quaternion make_quaternion(float w, float x, float y, float z) {
+  return (quaternion){w, x, y, z};
+}
+
+quaternion make_rotation_quaternion_from_axis_and_angle(vector axis, float angle) {
+  return (quaternion){cos(angle/2.0),
+                      vector_x(axis)*sin(angle/2.0),
+                      vector_y(axis)*sin(angle/2.0),
+                      vector_z(axis)*sin(angle/2.0)};
+}
+
+quaternion quaternion_multiply(quaternion a, quaternion b) {
+  return (quaternion){a.w*b.w - a.x*b.x - a.y*b.y - a.z*b.z,
+                      a.w*b.x + a.x*b.w + a.y*b.z - a.z*b.y,
+                      a.w*b.y - a.x*b.z + a.y*b.w + a.z*b.x,
+                      a.w*b.z + a.x*b.y - a.y*b.x + a.z*b.w};
+}
+
+quaternion quaternion_conjugate(quaternion q) {
+  return (quaternion){q.w, -q.x, -q.y, -q.z};
+}
+
+vector quaternion_rotate_vector(quaternion q, vector v) {
+  quaternion vq;
+  
+  vq = make_quaternion(0, vector_x(v), vector_y(v), vector_z(v));
+  vq = quaternion_multiply(q, vq);
+  vq = quaternion_multiply(vq, quaternion_conjugate(q));
+  return make_vector(vq.x, vq.y, vq.z);
+}
+
+void quaternion_fill_opengl_rotation_matrix(quaternion q, GLfloat * m) {
+  vector x,   y,   z;
+  vector x_t, y_t, z_t;
+  
+  x = make_vector(1, 0, 0);
+  y = make_vector(0, 1, 0);
+  z = make_vector(0, 0, 1);
+  
+  x_t = quaternion_rotate_vector(q, x);
+  y_t = quaternion_rotate_vector(q, y);
+  z_t = quaternion_rotate_vector(q, z);
+
+  m[ 0] = vector_dot_product(x, x_t);
+  m[ 1] = vector_dot_product(y, x_t);
+  m[ 2] = vector_dot_product(z, x_t);
+  m[ 3] = 0;
+  
+  m[ 4] = vector_dot_product(x, y_t);
+  m[ 5] = vector_dot_product(y, y_t);
+  m[ 6] = vector_dot_product(z, y_t);
+  m[ 7] = 0;
+  
+  m[ 8] = vector_dot_product(x, z_t);
+  m[ 9] = vector_dot_product(y, z_t);
+  m[10] = vector_dot_product(z, z_t);
+  m[11] = 0;
+
+  m[12] = 0;
+  m[13] = 0;
+  m[14] = 0;
+  m[15] = 1;
+}
+
+//=======================================================================================
+/*
+void quaternion_fill_opengl_rotation_matrix(quaternion q, GLfloat * m) {
+  vector x,   y,   z;
+  vector x_t, y_t, z_t;
+  
+  x = make_vector(1, 0, 0);
+  y = make_vector(0, 1, 0);
+  z = make_vector(0, 0, 1);
+  
+  x_t = quaternion_rotate_vector(q, x);
+  y_t = quaternion_rotate_vector(q, y);
+  z_t = quaternion_rotate_vector(q, z);
+
+  /*
+  The dot product of x and x_t is always x_t.x; similarly with
+  dot(y, x_t) and dot(z, x_t). As such, the following code:
+
+  m[ 0] = vector_dot_product(x, x_t);
+  m[ 1] = vector_dot_product(y, x_t);
+  m[ 2] = vector_dot_product(z, x_t);
+  m[ 3] = 0;
+
+  Can simply be written as:
+  */
+
+  m[ 0] = x_t.x;
+  m[ 1] = x_t.y;
+  m[ 2] = x_t.z;
+  m[ 3] = 0;
+
+  /*
+  Which is a bit more efficient (as well as more straightforward
+  conceptually) than the original code.
+
+  That said, there is a standard algorithm for quaternion-to-matrix
+  conversion (easily found via Google, I imagine) that computes the
+  matrix directly rather than rotating the basis vectors manually
+  and then loading them into the matrix. Although quaternion-to-matrix
+  conversion is unlikely to be a performance bottleneck, I'm pretty sure
+  that the standard algorithm will be quite a bit more efficient than the
+  algorithm presented here (although I haven't done an operation count
+  to confirm this).
+  */
+
+  m[ 4] = vector_dot_product(x, y_t);
+  m[ 5] = vector_dot_product(y, y_t);
+  m[ 6] = vector_dot_product(z, y_t);
+  m[ 7] = 0;
+  
+  m[ 8] = vector_dot_product(x, z_t);
+  m[ 9] = vector_dot_product(y, z_t);
+  m[10] = vector_dot_product(z, z_t);
+  m[11] = 0;
+
+  m[12] = 0;
+  m[13] = 0;
+  m[14] = 0;
+  m[15] = 1;
+}
+*/
+
+

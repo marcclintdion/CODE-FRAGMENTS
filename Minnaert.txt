@@ -1,0 +1,5 @@
+//PDF:Advanced Lighting and Materials with Shaders ~Kelly Dempski and Emmanuel Viale
+//-----------------------------------------------
+
+PS_OUTPUT OutPixel;float3 PixelToEye = normalize(EyePosition - In.InterPos);float3 NewNormal = normalize(In.Normal);float VdotN = dot(PixelToEye, NewNormal); float LdotN = dot(LightVector, NewNormal); float Irradiance = max(0.0f, LdotN);float4 DiffuseColor = {1.0f, 1.0f, 1.0f, 1.0f};	
+float Power = 0.8f;OutPixel.Color = DiffuseColor *pow(VdotN * LdotN, Power) * Irradiance;return OutPixel;

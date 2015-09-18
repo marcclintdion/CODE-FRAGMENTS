@@ -1,0 +1,26 @@
+      //========================================================================
+      #ifdef __APPLE__                                                                                                                          
+      //--------------
+        spriteImage             = [UIImage imageNamed:@"anisoRepaired.png"].CGImage;
+        width                   =  CGImageGetWidth(spriteImage);
+        height                  =  CGImageGetHeight(spriteImage);
+        spriteData              = (GLubyte *) calloc(width*height*4, sizeof(GLubyte));
+        spriteContext           =  CGBitmapContextCreate(spriteData, width, height, 8, width * 4, CGImageGetColorSpace(spriteImage), kCGImageAlphaNoneSkipLast);    
+
+        CGContextSetBlendMode(spriteContext, kCGBlendModeCopy);
+        CGContextTranslateCTM (spriteContext, 0, (float)height);//--FLIP_Y_AXIS
+        CGContextScaleCTM (spriteContext, 1.0, -1.0); //---------------------------FLIP_Y_AXIS          
+
+        CGContextDrawImage(spriteContext,  CGRectMake(0, 0, width, height), spriteImage);
+        CGContextRelease(spriteContext);
+        //---------
+        glGenTextures(1, &aniso_TEXTUREMAP);
+        glBindTexture(GL_TEXTURE_2D, aniso_TEXTUREMAP);
+        ConfigureAndLoadTexture(spriteData,  width, height); 
+        if(spriteData != NULL)
+        {
+                free(spriteData);    
+        }  
+      //----
+      #endif
+      //========================================================================

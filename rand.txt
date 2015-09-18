@@ -1,0 +1,9 @@
+srand(time(0));
+
+
+        for(int i = 1; i < NUMBER_OF_BACKGROUND_MODELS+1; i++)
+        {
+              //--------------------------------------------------------------------------------------------                   
+              collisionBoxArray[i][0]          =  float((rand()% 10)-5) *1.1;  //_POSITION[0]
+              collisionBoxArray[i][1]          =  float((rand()% 10)-5) *1.1;  //_POSITION[1]
+              collisionBoxArray[i][2]          =  float((rand()% 10)-5) *1.1;  //_POSITION[2]

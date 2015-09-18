@@ -1,0 +1,20 @@
+//=======================================================================================
+//---------------------------------------------------------------------------------------
+//_______________________________________________________________________________________
+if(keys[VK_F12])
+{
+    GLsizei screenCaptureWidth  = (GLsizei)viewWidth; 
+    GLsizei screenCaptureHeight = (GLsizei)viewHeight;        
+                
+    GLubyte *pixmap =(GLubyte *)malloc(screenCaptureWidth*screenCaptureHeight*4);
+    
+    glReadPixels(0,0,screenCaptureWidth,screenCaptureHeight,GL_BGRA,GL_UNSIGNED_BYTE,pixmap);
+    
+    FIBITMAP *texture = FreeImage_ConvertFromRawBits( pixmap, screenCaptureWidth, screenCaptureHeight, screenCaptureWidth*4, 32, 0xFF0000, 0x00FF00, 0x0000FF, true);    
+    FreeImage_Save(FIF_BMP, texture, "AAAAA.bmp", 0);         
+        
+    free(pixmap);                 
+}        
+//_______________________________________________________________________________________
+//---------------------------------------------------------------------------------------
+//=======================================================================================
